@@ -1,0 +1,10 @@
+﻿Option Explicit
+
+Private Sub Workbook_Open()
+
+    ' Initialize public vars.
+    Call init
+    
+    Call initCreateMMSheet
+
+End Sub

@@ -1,0 +1,18 @@
+﻿Option Explicit
+
+Private Sub deleteRowsBulkImport_CommandButton_Click()
+
+
+
+
+    
+    
+
+End Sub
+
+Private Sub CommandButton1_Click()
+
+
+    Call deleteRowsBulkImport
+
+End Sub

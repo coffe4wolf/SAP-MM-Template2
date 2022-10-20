@@ -1,0 +1,295 @@
+﻿    Option Explicit
+
+Private Sub addMateriaToBulk_lCommandButton_Click()
+
+
+
+    Call init
+    
+    
+    
+    ' Check all data is entered.
+    With wsCreateMM
+    
+        ' Check purchasing group code.
+        If Trim(.purchasingGroup_ComboBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterPurchasingGroupCodeError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check purchasing group code.
+        ElseIf Trim(.materialGroupCode_ComboBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterMaterialGroupCodeError").value, vbOKOnly
+            Exit Sub
+    
+        ' Check unit of entry code.
+        ElseIf Trim(.unitOfEntry_TextBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterUnitOfEntryError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check priority.
+        ElseIf Trim(.priority_ComboBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterPriorityError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check article entered if supplier code not empty.
+        ElseIf Trim(.chooseSupplier_TextBox.value) <> "" And Trim(.article_TextBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterArticleError").value, vbOKOnly
+            Exit Sub
+    
+        ' Check max price.
+        ElseIf Trim(.maxPrice_TextBox.value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterMaxPriceError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check short description.
+        ElseIf Trim(.Range(shortDescriptionRangeAddress).Offset(1, 1).value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterShortDescriptionError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check full description.
+        ElseIf (Trim(.Range(fullDescriptionRangeAddress).Offset(1, 1).value) = "" Or Trim(.Range(techDescrupionRangeAddress).Offset(1, 1).value) = "") Then
+            
+            MsgBox wsRussianCations.Range("enterFullOrTechDescriptionError").value, vbOKOnly
+            Exit Sub
+            
+        ' Check short eng description.
+        ElseIf Trim(.Range(shortDescriptionEngAddress).Offset(1, 1).value) = "" Then
+        
+            MsgBox wsRussianCations.Range("enterShortDescriptionEngError").value, vbOKOnly
+            Exit Sub
+            
+        End If
+    
+    End With
+    
+    
+    Call unprotectSheet(wsBulkImport, sheetProtectionPassword)
+     
+    Call addMaterialToBulkImport
+    
+    Call protectSheet(wsBulkImport, sheetProtectionPassword)
+    
+    MsgBox (wsRussianCations.Range("addedMaterialMessage"))
+    
+    
+
+End Sub
+
+Private Sub article_TextBox_LostFocus()
+
+End Sub
+
+Private Sub category_ComboBox_Change()
+
+
+
+    Call init
+    
+    
+    
+    wsCreateMM.materialGroup_ComboBox.Clear
+    wsCreateMM.class_ComboBox.Clear
+    
+    
+    
+    Call addValuesToCombobox(wsCreateMM.materialGroup_ComboBox, wsCreateMM.category_ComboBox.value, "A", "C", wsCategoriesMaster)
+    
+    
+    
+End Sub
+
+Private Sub chooseSupplier_CommandButton_Click()
+
+    Call init
+
+    'MultiSelectionForm.Caption = MultiSelectionFormCaption
+    MultiSelectionForm.ListBox1.MultiSelect = fmMultiSelectSingle
+    Call Populate2DimListBox(wsContractorsMaster.Name)
+    MultiSelectionForm.Show
+
+End Sub
+
+Private Sub clearBulkImport_CommandButton_Click()
+    
+    Call ClearBulkImportSheet
+    
+End Sub
+
+Private Sub clearEntryData_CommandButton_Click()
+
+    Call clearEntryData
+
+End Sub
+
+Private Sub criticalPart_CheckBox_Click()
+
+End Sub
+
+Private Sub materialGroup_ComboBox_Change()
+
+    Call init
+    
+    wsCreateMM.class_ComboBox.Clear
+    
+    Call addValuesToCombobox(wsCreateMM.class_ComboBox, wsCreateMM.materialGroup_ComboBox.value, "C", "D", wsCategoriesMaster)
+    
+    Call setValueToCombobox(wsCreateMM.materialGroupCode_ComboBox, wsCreateMM.materialGroup_ComboBox.value, "C", "B", wsCategoriesMaster)
+    
+    Call setValueToCombobox(wsCreateMM.purchasingGroup_ComboBox, wsCreateMM.materialGroupCode_ComboBox.value, "A", "B", wsPurchasingGroupsMaster)
+    
+End Sub
+
+Private Sub class_ComboBox_Change()
+
+
+    Call ImprovePerformance(True)
+
+    Call init
+    
+    
+    Call unprotectSheet(wsCreateMM, sheetProtectionPassword)
+    
+    
+    If class_ComboBox.value <> "" Then
+
+        ' Set unit of entry due to chosen class.
+        Call setValueToCombobox(wsCreateMM.unitOfEntry_TextBox, wsCreateMM.class_ComboBox.value, columnWithClass, "H", wsCategoriesMaster)
+        
+        
+        Call drawClassAttributes(wsCreateMM.class_ComboBox.value, rowToStartDrawAttributes, shortDescriptionRangeAddress, fullDescriptionRangeAddress, techDescrupionRangeAddress, shortDescriptionEngAddress)
+        
+        wsCreateMM.priority_ComboBox.value = wsSettings.Range("piorityNormal").value
+        wsCreateMM.article_TextBox.value = ""
+        wsCreateMM.maxPrice_TextBox.value = ""
+        wsCreateMM.chooseSupplier_TextBox.value = ""
+        wsCreateMM.criticalPart_CheckBox.value = False
+        wsCreateMM.batchManagement_CheckBox.value = False
+    
+    End If
+    
+    
+    Call lockCreateMMRanges
+    
+    
+    Call ImprovePerformance(True)
+    
+    
+    
+End Sub
+
+Private Sub generateShortText_CommandButton_Click()
+
+    Call init
+    
+    Call generateDescription
+    Call getCableTypeDescription("A12", wsCreateMM)
+
+End Sub
+
+Private Sub maxPrice_TextBox_LostFocus()
+
+
+
+    Call init
+
+    ' Check max price is correct.
+    If RxMatch(wsCreateMM.maxPrice_TextBox.value, "([\d]+[\,\.][\d]{1,})|(^[\d]+$)") <> "" Then
+        wsCreateMM.maxPrice_TextBox.value = Replace(wsCreateMM.maxPrice_TextBox.value, ".", ",")
+    Else
+        wsCreateMM.maxPrice_TextBox.value = ""
+    End If
+    
+    
+
+End Sub
+
+Private Sub saveBulkImport_CommandButton_Click()
+
+    Call init
+
+    Call SaveTemplateToSeparateFile(wsBulkImport.Name)
+
+End Sub
+
+Private Sub Worksheet_Activate()
+
+    ' Initialize public vars.
+    Call init
+    
+   'Call initCreateMMSheet
+
+End Sub
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+    Call ImprovePerformance(True)
+
+    Call init
+    
+    Application.EnableEvents = True
+
+    Dim rowsCounter As Long: rowsCounter = 12
+     
+'    With wsCreateMM
+'
+'        If Not Intersect(Target, .Range("A11:E11"), .Range("B11:B1000")) Is Nothing Then
+'
+'        ' Find the last row with attribute.
+'        Do While Not IsEmpty(wsCreateMM.Range("A" & rowsCounter))
+'
+'            rowsCounter = rowsCounter + 1
+'
+'        Loop
+'
+'        End If
+'
+'    End With
+    
+    
+    ' Find the last row with attribute.
+    Do While Not IsEmpty(wsCreateMM.Range("A" & rowsCounter))
+    
+        rowsCounter = rowsCounter + 1
+        
+    Loop
+     
+    
+    ' Find the last row with attribute.
+'    Do While Not IsEmpty(wsCreateMM.Range("A" & rowsCounter))
+'
+'        rowsCounter = rowsCounter + 1
+'
+'    Loop
+
+    
+    
+    ' Find and type short attribute value if user chose an attribute.
+    On Error GoTo Whoa
+    If Not Intersect(Target, Range("B12:B" & rowsCounter)) Is Nothing Then
+
+       'Application.EnableEvents = False
+       Target.Offset(0, 1).value = getShortAttributeValue(Target.value, Target.Offset(0, -1).value, materialGroup_ComboBox.value, class_ComboBox.value)
+
+    End If
+    
+    
+    
+LetsContinue:
+
+    Call ImprovePerformance(True)
+
+    Application.EnableEvents = True
+    Exit Sub
+
+Whoa:
+    'MsgBox Err.Description
+    
+    
+End Sub
